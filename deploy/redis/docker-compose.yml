@@ -1,0 +1,27 @@
+services:
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+
+    command:
+      - sh
+      - -euc
+      - |
+        exec redis-server --requirepass "$$REDIS_PASSWORD"
+
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+    ports:
+      - "6379:6379"
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep PONG",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
