@@ -1,0 +1,76 @@
+services:
+  zulip-init:
+    image: ${ZULIP_IMAGE}
+    restart: "no"
+
+    command: ["app:init"]
+
+    environment:
+      SETTING_REMOTE_POSTGRES_HOST: ${POSTGRES_HOST}
+      SETTING_MEMCACHED_LOCATION: ${MEMCACHED_HOST}:11211
+      SETTING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SETTING_REDIS_HOST: ${REDIS_HOST}
+
+      SETTING_EXTERNAL_HOST: ${EXTERNAL_HOST}
+      SETTING_ZULIP_ADMINISTRATOR: ${ZULIP_ADMINISTRATOR}
+
+      CERTIFICATES: "self-signed"
+      CONFIG_application_server__queue_workers_multiprocess: "false"
+
+      SECRETS_postgres_password: ${POSTGRES_PASSWORD}
+      SECRETS_rabbitmq_password: ${RABBITMQ_PASSWORD}
+      SECRETS_redis_password: ${REDIS_PASSWORD}
+      SECRETS_memcached_password: ${MEMCACHED_PASSWORD}
+      SECRETS_secret_key: ${ZULIP_SECRET_KEY}
+      SECRETS_email_password: ${ZULIP_EMAIL_PASSWORD}
+
+    volumes:
+      - zulip-data:/data
+
+  zulip:
+    image: ${ZULIP_IMAGE}
+    restart: unless-stopped
+
+    ports:
+      - "443:443"
+
+    environment:
+      SETTING_REMOTE_POSTGRES_HOST: ${POSTGRES_HOST}
+      SETTING_MEMCACHED_LOCATION: ${MEMCACHED_HOST}:11211
+      SETTING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SETTING_REDIS_HOST: ${REDIS_HOST}
+
+      SETTING_EXTERNAL_HOST: ${EXTERNAL_HOST}
+      SETTING_ZULIP_ADMINISTRATOR: ${ZULIP_ADMINISTRATOR}
+
+      CERTIFICATES: "self-signed"
+      CONFIG_application_server__queue_workers_multiprocess: "false"
+
+      SECRETS_postgres_password: ${POSTGRES_PASSWORD}
+      SECRETS_rabbitmq_password: ${RABBITMQ_PASSWORD}
+      SECRETS_redis_password: ${REDIS_PASSWORD}
+      SECRETS_memcached_password: ${MEMCACHED_PASSWORD}
+      SECRETS_secret_key: ${ZULIP_SECRET_KEY}
+      SECRETS_email_password: ${ZULIP_EMAIL_PASSWORD}
+
+    volumes:
+      - zulip-data:/data
+
+    depends_on:
+      zulip-init:
+        condition: service_completed_successfully
+
+    healthcheck:
+      test: ["CMD", "curl", "-isfL", "--insecure", "https://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
+
+    ulimits:
+      nofile:
+        soft: 1000000
+        hard: 1048576
+
+volumes:
+  zulip-data:

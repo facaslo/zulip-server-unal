@@ -95,3 +95,6 @@ core
 /.env
 /.env.*
 !/.env.example
+
+# Cloud deployment local secrets
+/deploy/**/.env
