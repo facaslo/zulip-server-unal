@@ -1,0 +1,4 @@
+# Copiar como backend.hcl y usar con:
+#   terraform init -backend-config=backend.hcl
+# El nombre del bucket es la salida state_bucket de terraform/bootstrap.
+bucket = "mi-proyecto-gcp-tfstate"

@@ -95,3 +95,21 @@ core
 /.env
 /.env.*
 !/.env.example
+
+# Terraform: el estado y los planes contienen las contraseñas generadas
+# en texto plano; los valores reales por entorno no se versionan (solo
+# los .example).
+/terraform/**/.terraform/
+/terraform/**/*.tfstate
+/terraform/**/*.tfstate.*
+/terraform/**/*.tfplan
+/terraform/**/tfplan
+/terraform/**/*.tfvars
+/terraform/**/*.tfvars.json
+/terraform/**/backend.hcl
+/terraform/**/crash.log
+/terraform/**/crash.*.log
+/terraform/**/override.tf
+/terraform/**/override.tf.json
+/terraform/**/*_override.tf
+/terraform/**/*_override.tf.json
