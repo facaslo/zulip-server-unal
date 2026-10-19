@@ -180,8 +180,8 @@ jobs:
           scan-type: fs
           scan-ref: terraform
           scanners: misconfig,secret
-          format: sarif
-          output: trivy-terraform-results.sarif
+          format: table
+          # output: trivy-terraform-results.sarif
           severity: CRITICAL,HIGH
           exit-code: '1'
       - name: Upload Trivy results to Security tab
