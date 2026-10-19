@@ -177,7 +177,7 @@ jobs:
         with:
           scan-type: fs
           scan-ref: terraform
-          scanners: misconfig, secret
+          scanners: misconfig,secret
           format: sarif
           output: trivy-terraform-results.sarif
           severity: CRITICAL,HIGH
