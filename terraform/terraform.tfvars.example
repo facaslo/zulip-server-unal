@@ -1,0 +1,27 @@
+# Copiar como terraform.tfvars (ignorado por git) y ajustar.
+# Ningún secreto va aquí: las contraseñas internas las genera
+# Terraform y la de SMTP se pasa con TF_VAR_zulip_email_password.
+
+project_id  = "mi-proyecto-gcp"
+region      = "us-central1"
+zone        = "us-central1-a"
+environment = "dev"
+
+zulip_administrator = "admin@example.com"
+
+# IP pública de quien ejecuta Terraform (curl -s ifconfig.me).
+authorized_networks = [
+  { cidr_block = "203.0.113.10/32", display_name = "equipo" },
+]
+
+# Fijar la imagen a un tag inmutable publicado por el pipeline.
+# images = {
+#   zulip     = "ghcr.io/facaslo/zulip-server-unal:sha-59228f7"
+#   postgres  = "zulip/zulip-postgresql:14"
+#   redis     = "redis:alpine"
+#   memcached = "memcached:alpine"
+#   rabbitmq  = "rabbitmq:4.2"
+# }
+
+# Solo en entornos efímeros, para poder hacer terraform destroy.
+# deletion_protection = false
