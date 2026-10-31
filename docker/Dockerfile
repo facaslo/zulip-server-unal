@@ -83,8 +83,8 @@ RUN dpkg-divert --add --rename /etc/init.d/nginx && \
     apt-get -qq clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY entrypoint.sh /sbin/entrypoint.sh
-COPY zulip-certbot-setup /usr/local/sbin/zulip-certbot-setup
+COPY --chmod=755 entrypoint.sh /sbin/entrypoint.sh
+COPY --chmod=755 zulip-certbot-setup /usr/local/sbin/zulip-certbot-setup
 
 VOLUME ["${DATA_DIR}"]
 
