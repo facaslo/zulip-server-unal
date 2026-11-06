@@ -1,16 +1,19 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+import pika.exceptions
 from django.db import connection
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
+from opentelemetry.trace import StatusCode
 from psycopg2.sql import SQL
 
 from zerver.lib import tracing
+from zerver.lib.queue import SimpleQueueClient
 from zerver.lib.test_classes import ZulipTestCase
 from zerver.lib.tracing import (
     NoOrphanClientSpansSampler,
@@ -76,6 +79,68 @@ class TracingTest(ZulipTestCase):
         self.assertEqual(
             [span.name for span in exporter.get_finished_spans()], ["SELECT", "POST /messages"]
         )
+
+    def test_orphan_publish_spans_are_dropped(self) -> None:
+        exporter = InMemorySpanExporter()
+        provider = TracerProvider(sampler=NoOrphanClientSpansSampler(ALWAYS_ON))
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        tracer = provider.get_tracer("test")
+
+        with tracer.start_as_current_span("publish events", kind=trace.SpanKind.PRODUCER):
+            pass
+        self.assertEqual(exporter.get_finished_spans(), ())
+
+        with (
+            tracer.start_as_current_span("POST /messages", kind=trace.SpanKind.SERVER),
+            tracer.start_as_current_span("publish events", kind=trace.SpanKind.PRODUCER),
+        ):
+            pass
+        self.assertEqual(
+            [span.name for span in exporter.get_finished_spans()],
+            ["publish events", "POST /messages"],
+        )
+
+    def test_publish_span(self) -> None:
+        client = MagicMock()
+        with self.capture_spans() as exporter:
+            SimpleQueueClient.json_publish(client, "notify_tornado", {"event": "message"})
+
+        client.publish.assert_called_once()
+        client._reconnect.assert_not_called()
+        [span] = exporter.get_finished_spans()
+        self.assertEqual(span.name, "publish notify_tornado")
+        self.assertEqual(span.kind, trace.SpanKind.PRODUCER)
+        self.assertEqual(span.status.status_code, StatusCode.UNSET)
+        assert span.attributes is not None
+        self.assertEqual(span.attributes["messaging.system"], "rabbitmq")
+        self.assertEqual(span.attributes["messaging.destination.name"], "notify_tornado")
+        self.assertNotIn("error.type", span.attributes)
+
+    def test_publish_span_covers_successful_retry(self) -> None:
+        client = MagicMock()
+        client.publish.side_effect = [pika.exceptions.AMQPConnectionError(), None]
+        with self.capture_spans() as exporter:
+            SimpleQueueClient.json_publish(client, "notify_tornado", {"event": "message"})
+
+        client._reconnect.assert_called_once()
+        [span] = exporter.get_finished_spans()
+        self.assertEqual(span.status.status_code, StatusCode.UNSET)
+        assert span.attributes is not None
+        self.assertNotIn("error.type", span.attributes)
+
+    def test_publish_span_records_failure(self) -> None:
+        client = MagicMock()
+        client.publish.side_effect = pika.exceptions.AMQPConnectionError()
+        with (
+            self.capture_spans() as exporter,
+            self.assertRaises(pika.exceptions.AMQPConnectionError),
+        ):
+            SimpleQueueClient.json_publish(client, "notify_tornado", {"event": "message"})
+
+        [span] = exporter.get_finished_spans()
+        self.assertEqual(span.status.status_code, StatusCode.ERROR)
+        assert span.attributes is not None
+        self.assertEqual(span.attributes["error.type"], "AMQPConnectionError")
 
     def test_untraced_notification(self) -> None:
         self.assertEqual(get_trace_context(), {})

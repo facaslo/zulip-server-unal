@@ -21,6 +21,7 @@ from pika.spec import Basic
 from tornado import ioloop
 from typing_extensions import override
 
+from zerver.lib.tracing import trace_publish
 from zerver.lib.utils import assert_is_not_none
 
 MAX_REQUEST_RETRIES = 3
@@ -136,14 +137,15 @@ class QueueClient(ABC, Generic[ChannelT]):
 
     def json_publish(self, queue_name: str, body: Mapping[str, Any]) -> None:
         data = orjson.dumps(body)
-        try:
-            self.publish(queue_name, data)
-            return
-        except pika.exceptions.AMQPConnectionError:
-            self.log.warning("Failed to send to rabbitmq, trying to reconnect and send again")
+        with trace_publish(queue_name):
+            try:
+                self.publish(queue_name, data)
+                return
+            except pika.exceptions.AMQPConnectionError:
+                self.log.warning("Failed to send to rabbitmq, trying to reconnect and send again")
 
-        self._reconnect()
-        self.publish(queue_name, data)
+            self._reconnect()
+            self.publish(queue_name, data)
 
 
 class SimpleQueueClient(QueueClient[BlockingChannel]):
