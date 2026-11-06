@@ -12,6 +12,9 @@ locals {
   frontend_name = "gmp-frontend"
   frontend_port = 9090
   grafana_port  = 3000
+
+  cloud_trace_plugin         = "googlecloud-trace-datasource"
+  cloud_trace_plugin_version = "1.4.0"
 }
 
 resource "kubernetes_namespace_v1" "this" {
@@ -227,6 +230,23 @@ resource "kubernetes_config_map_v1" "grafana_datasources" {
         editable  = false
       }]
     })
+    "cloud-trace.yaml" = yamlencode({
+      apiVersion = 1
+      datasources = [{
+        name     = "Cloud Trace"
+        uid      = "cloud-trace"
+        type     = local.cloud_trace_plugin
+        access   = "proxy"
+        editable = false
+        jsonData = {
+          # "gce" toma las credenciales del servidor de metadatos, que
+          # en GKE entrega las de Workload Identity.
+          authenticationType = "gce"
+          defaultProject     = var.project_id
+          gceDefaultProject  = var.project_id
+        }
+      }]
+    })
   }
 }
 
@@ -321,6 +341,8 @@ resource "kubernetes_deployment_v1" "grafana" {
       }
 
       spec {
+        service_account_name = kubernetes_service_account_v1.grafana.metadata[0].name
+        # Workload Identity usa el servidor de metadatos, no este token.
         automount_service_account_token = false
 
         container {
@@ -346,6 +368,13 @@ resource "kubernetes_deployment_v1" "grafana" {
           env {
             name  = "GF_ANALYTICS_REPORTING_ENABLED"
             value = "false"
+          }
+          # Instalación en segundo plano, a propósito: con
+          # GF_PLUGINS_PREINSTALL_SYNC, Grafana termina con error si no
+          # puede descargar el plugin, y con él se caerían las alertas.
+          env {
+            name  = "GF_PLUGINS_PREINSTALL"
+            value = "${local.cloud_trace_plugin}@${local.cloud_trace_plugin_version}"
           }
 
           env_from {
@@ -432,6 +461,8 @@ resource "kubernetes_deployment_v1" "grafana" {
       }
     }
   }
+
+  depends_on = [google_service_account_iam_member.grafana_workload_identity]
 }
 
 resource "kubernetes_service_v1" "grafana" {

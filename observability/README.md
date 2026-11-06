@@ -25,6 +25,20 @@ arranque (provisioning nativo).
 - `alerting/contactpoints.yaml` — contact point de email para las notificaciones.
 - `alerting/notification-policies.yaml` — política de enrutamiento de las alertas hacia ese contact point.
 
+## Trazas
+
+Las trazas de Zulip se guardan en Cloud Trace y Grafana las consulta con el datasource **Cloud Trace**
+(plugin `googlecloud-trace-datasource`, aprovisionado en `terraform/modules/monitoring/main.tf`). Para verlas,
+se abre Grafana, se entra a **Explore**, se elige ese datasource y se usa una de estas consultas:
+
+- **Filter**: lista las trazas de la ventana de tiempo. Se puede acotar con filtros aditivos como
+  `MinLatency:500ms` o `Method:POST`.
+- **Trace ID**: abre una traza por su identificador.
+
+Grafana instala el plugin en segundo plano cada vez que arranca, porque el Pod no tiene disco, así que el
+datasource puede tardar unos segundos en responder después de un reinicio. Si la descarga falla, Grafana y las
+alertas siguen funcionando y solo falla el datasource de trazas; reiniciar el Pod vuelve a intentar la instalación.
+
 ## Alcance
 
 Por ahora solo existen reglas de alerta para el escenario de **disponibilidad** y el de **latencia**

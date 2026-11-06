@@ -40,6 +40,38 @@ resource "google_service_account_iam_member" "collector_workload_identity" {
   member             = "serviceAccount:${var.project_id}.svc.id.goog[${kubernetes_namespace_v1.this.metadata[0].name}/${kubernetes_service_account_v1.collector.metadata[0].name}]"
 }
 
+# ------------------------------------------------------------
+# Identidad de Grafana para consultar Cloud Trace.
+# ------------------------------------------------------------
+resource "google_service_account" "grafana" {
+  project      = var.project_id
+  account_id   = "${var.name}-trace-reader"
+  display_name = "Grafana ${var.name} (lectura de Cloud Trace)"
+}
+
+resource "google_project_iam_member" "grafana" {
+  project = var.project_id
+  role    = "roles/cloudtrace.user"
+  member  = "serviceAccount:${google_service_account.grafana.email}"
+}
+
+resource "kubernetes_service_account_v1" "grafana" {
+  metadata {
+    name      = "grafana"
+    namespace = kubernetes_namespace_v1.this.metadata[0].name
+    labels    = local.labels
+    annotations = {
+      "iam.gke.io/gcp-service-account" = google_service_account.grafana.email
+    }
+  }
+}
+
+resource "google_service_account_iam_member" "grafana_workload_identity" {
+  service_account_id = google_service_account.grafana.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[${kubernetes_namespace_v1.this.metadata[0].name}/${kubernetes_service_account_v1.grafana.metadata[0].name}]"
+}
+
 resource "kubernetes_config_map_v1" "collector" {
   metadata {
     name      = local.collector_name
