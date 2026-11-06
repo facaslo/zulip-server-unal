@@ -13,21 +13,24 @@ groups:
         # SLO de latencia: p95 <= 2.5s en la entrega de eventos de
         # mensaje (equivalente a 95% de entregas con latencia <2.5s;
         # margen del SLO = 5%).
-        # Burn rate = (proporcion de entregas lentas observada en 1h)
+        # Burn rate = (proporcion de entregas lentas observada en 5 min)
         # / (margen del SLO, 5%). Umbral: 5x -> agotaria el
-        # presupuesto de 30 dias en 6 dias si se sostiene.
+        # presupuesto de 30 dias en 6 dias si se sostiene. Ventana
+        # corta a proposito: el GameDay solo tiene 10 min en vivo para
+        # demostrar Pending -> Firing, una ventana de 1h diluiria la
+        # carga de la demo entre el trafico normal de la hora previa.
         condition: C
         data:
           - refId: A
             relativeTimeRange:
-              from: 3600
+              from: 300
               to: 0
             datasourceUid: managed-prometheus
             model:
               editorMode: code
               expr: >-
-                (1 - (sum(rate(zulip_event_delivery_latency_seconds_bucket{event_type="message", le="2.5"}[1h]))
-                / sum(rate(zulip_event_delivery_latency_seconds_count{event_type="message"}[1h])))) / 0.05
+                (1 - (sum(rate(zulip_event_delivery_latency_seconds_bucket{event_type="message", le="2.5"}[5m]))
+                / sum(rate(zulip_event_delivery_latency_seconds_count{event_type="message"}[5m])))) / 0.05
               instant: true
               range: false
               refId: A
@@ -49,9 +52,9 @@ groups:
           severity: page
           slo: latency
         annotations:
-          summary: "Burn rate de latencia > 5x en ventana de 1h (entrega de eventos de mensaje)"
+          summary: "Burn rate de latencia > 5x en ventana de 5 min (entrega de eventos de mensaje)"
           description: >-
             La proporcion de entregas de mensaje con latencia >= 2.5s supera 5
             veces el margen de error del SLO de latencia (p95 <= 2.5s, margen 5%)
-            sostenido durante 1 hora. A este ritmo el presupuesto de error
+            sostenido durante 5 minutos. A este ritmo el presupuesto de error
             mensual se agotaria en aproximadamente 6 dias si no se corrige.

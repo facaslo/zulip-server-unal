@@ -12,9 +12,12 @@ Herramientas para inyectar y observar la degradación del SLI de latencia de ent
 2. **Rate limiting.** Zulip limita cada usuario a 200 peticiones/min (`api_by_user` en
    `zproject/default_settings.py`). Lo que pasa de ahí recibe 429: el mensaje no se envía, no hay
    latencia que medir, y el 429 cuenta como falla de *disponibilidad*, no de latencia.
-3. **Ventana de 1 h.** La regla calcula la proporción de entregas lentas en la última hora. Un pico
-   corto (SIGSTOP/SIGCONT) se diluye; la degradación tiene que sostenerse varios minutos hasta superar
-   el 25 % de entregas lentas (burn rate 5 × margen del 5 %).
+3. **Ventana de evaluación.** La regla calculaba la proporción de entregas lentas en la última hora; un
+   pico corto (SIGSTOP/SIGCONT) se diluía entre el tráfico normal de esa hora. Se corrigió a una ventana
+   de 5 min (ver `observability/alerting/rules/latency-burn-rate.yaml`), la misma del SLI documentado
+   originalmente — con los 10 min en vivo del GameDay no alcanza para que una ventana de 1h muestre
+   Firing. Aun así hay que sostener la degradación varios minutos hasta superar el 25 % de entregas
+   lentas (burn rate 5 × margen del 5 %).
 
 ## Preparación
 
@@ -25,6 +28,28 @@ Herramientas para inyectar y observar la degradación del SLI de latencia de ent
    Usar varios bots receptores evita que el long-polling de un mismo usuario choque con el límite de
    200 peticiones/min.
 3. Instalar dependencias: `py -m pip install requests`.
+
+## Antes de correr la carga: eximir a los bots del rate limiting
+
+Sin esto, el límite normal de 200 peticiones/min por usuario (`api_by_user`) corta la carga con `429`
+antes de generar suficiente degradación de latencia — y el `429` cuenta como falla de *disponibilidad*,
+no de latencia (ver punto 2 arriba). Ejecutar dentro del Pod de Zulip, repitiendo `--email` por cada bot
+(emisores y receptores):
+
+```
+kubectl exec -it deploy/zulip -- python manage.py gameday_rate_limit_exempt \
+    --realm zulip --enable \
+    --email 01-emisor-bot@... --email 02-receptor-bot@... ...
+```
+
+Pide una confirmación escrita antes de aplicar el cambio (no es simulado, toca la base de datos real).
+Al terminar el ejercicio, restaurar siempre el límite normal:
+
+```
+kubectl exec -it deploy/zulip -- python manage.py gameday_rate_limit_exempt \
+    --realm zulip --disable \
+    --email 01-emisor-bot@... --email 02-receptor-bot@... ...
+```
 
 ## Uso
 
@@ -40,11 +65,11 @@ py gameday/latency_load.py --bots-dir gameday/bots --senders 1 --threads 2 --rat
 
 ## Consultas para Grafana Explore
 
-Burn rate exacto de la regla (ventana 1 h, umbral 5):
+Burn rate exacto de la regla (ventana 5 min, umbral 5):
 
 ```
-(1 - (sum(rate(zulip_event_delivery_latency_seconds_bucket{event_type="message", le="2.5"}[1h]))
-  / sum(rate(zulip_event_delivery_latency_seconds_count{event_type="message"}[1h])))) / 0.05
+(1 - (sum(rate(zulip_event_delivery_latency_seconds_bucket{event_type="message", le="2.5"}[5m]))
+  / sum(rate(zulip_event_delivery_latency_seconds_count{event_type="message"}[5m])))) / 0.05
 ```
 
 p95 de entrega en ventana corta, para ver el efecto en vivo:
