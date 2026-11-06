@@ -7,10 +7,10 @@ that variable, the tracer used here is a no-op, which is what tests
 and development use.
 
 Each Django and Tornado request is a span, with child spans for its
-SQL queries, Redis commands, and outgoing HTTP requests.  Events sent
-to Tornado through RabbitMQ carry the sending request's trace context,
-so delivering a message to clients shows up in the same trace as the
-POST /messages that sent it.
+SQL queries, Redis commands, outgoing HTTP requests, and publishes to
+RabbitMQ.  Events sent to Tornado through RabbitMQ carry the sending
+request's trace context, so delivering a message to clients shows up
+in the same trace as the POST /messages that sent it.
 """
 
 import os
@@ -35,9 +35,10 @@ EXCLUDED_URLS = "/json/events$,/api/v1/events$,/health$"
 
 
 class NoOrphanClientSpansSampler(Sampler):
-    """Drops SQL, Redis, and HTTP client spans that have no parent, so
-    that the queries of excluded URLs, like the health check run by
-    Kubernetes every few seconds, don't each start a trace."""
+    """Drops SQL, Redis, HTTP client, and RabbitMQ publish spans that
+    have no parent, so that the queries of excluded URLs, like the
+    health check run by Kubernetes every few seconds, don't each start
+    a trace."""
 
     def __init__(self, delegate: Sampler) -> None:
         self.delegate = delegate
@@ -54,7 +55,7 @@ class NoOrphanClientSpansSampler(Sampler):
         trace_state: trace.TraceState | None = None,
     ) -> SamplingResult:
         parent = trace.get_current_span(parent_context).get_span_context()
-        if kind == trace.SpanKind.CLIENT and not parent.is_valid:
+        if kind in (trace.SpanKind.CLIENT, trace.SpanKind.PRODUCER) and not parent.is_valid:
             return SamplingResult(Decision.DROP)
         return self.delegate.should_sample(
             parent_context, trace_id, name, kind, attributes, links, trace_state
@@ -134,6 +135,27 @@ def trace_sql(
         attributes["db.query.text"] = sql
     with tracer.start_as_current_span(operation, kind=trace.SpanKind.CLIENT, attributes=attributes):
         return execute(sql, params, many, context)
+
+
+@contextmanager
+def trace_publish(queue_name: str) -> Iterator[None]:
+    with tracer.start_as_current_span(
+        f"publish {queue_name}",
+        kind=trace.SpanKind.PRODUCER,
+        attributes={
+            "messaging.system": "rabbitmq",
+            "messaging.operation.name": "publish",
+            "messaging.destination.name": queue_name,
+        },
+    ) as span:
+        try:
+            yield
+        except Exception as e:
+            # Cloud Trace's read API omits the exception event that the
+            # span records, so the failure must also be an attribute to
+            # be visible in Grafana.
+            span.set_attribute("error.type", type(e).__qualname__)
+            raise
 
 
 def get_trace_context() -> dict[str, str]:
