@@ -52,7 +52,7 @@ variable "trace_clients" {
 variable "scrape_interval" {
   description = "Intervalo de scrape. El costo de Managed Prometheus es proporcional a las muestras ingeridas."
   type        = string
-  default     = "60s"
+  default     = "30s"
 }
 
 variable "labels" {
