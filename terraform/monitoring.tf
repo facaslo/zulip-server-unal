@@ -68,6 +68,8 @@ module "monitoring" {
   project_id             = var.project_id
   name                   = var.name
   grafana_admin_password = module.secrets.values["grafana_admin_password"]
+  uptime_check_host      = local.external_host
+  outage_alert_email     = var.zulip_administrator
   labels                 = local.labels
 
   images = {

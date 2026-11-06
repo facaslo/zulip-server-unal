@@ -49,6 +49,17 @@ variable "trace_clients" {
   default = []
 }
 
+variable "uptime_check_host" {
+  description = "Dominio o IP pública de Zulip que sondea el uptime check."
+  type        = string
+}
+
+variable "outage_alert_email" {
+  description = "Correo que recibe la alerta de caída de Cloud Monitoring."
+  type        = string
+  sensitive   = true
+}
+
 variable "scrape_interval" {
   description = "Intervalo de scrape. El costo de Managed Prometheus es proporcional a las muestras ingeridas."
   type        = string

@@ -32,12 +32,20 @@ Las trazas de Zulip se guardan en Cloud Trace y Grafana las consulta con el data
 se abre Grafana, se entra a **Explore**, se elige ese datasource y se usa una de estas consultas:
 
 - **Filter**: lista las trazas de la ventana de tiempo. Se puede acotar con filtros aditivos como
-  `MinLatency:500ms` o `Method:POST`.
+  `MinLatency:500ms` o `/http/method:POST`.
 - **Trace ID**: abre una traza por su identificador.
 
 Grafana instala el plugin en segundo plano cada vez que arranca, porque el Pod no tiene disco, así que el
 datasource puede tardar unos segundos en responder después de un reinicio. Si la descarga falla, Grafana y las
 alertas siguen funcionando y solo falla el datasource de trazas; reiniciar el Pod vuelve a intentar la instalación.
+
+## Detección de caídas
+
+Las alertas de burn rate dependen de que Zulip reporte métricas y de que Grafana esté en pie. Para cubrir una
+caída completa, `terraform/modules/monitoring/uptime.tf` crea en Cloud Monitoring una sonda de `/` cada 5 minutos
+desde varias regiones, una alerta cuando falla desde más de una región y un canal de correo propio, enviado a
+`zulip_administrator`. Nada de esto corre dentro del clúster ni se ve en Grafana: se administra desde
+**Monitoring** en la consola de Google Cloud.
 
 ## Alcance
 
