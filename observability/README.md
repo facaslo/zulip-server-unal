@@ -32,7 +32,7 @@ Las trazas de Zulip se guardan en Cloud Trace y Grafana las consulta con el data
 se abre Grafana, se entra a **Explore**, se elige ese datasource y se usa una de estas consultas:
 
 - **Filter**: lista las trazas de la ventana de tiempo. Se puede acotar con filtros aditivos como
-  `MinLatency:500ms` o `Method:POST`.
+  `MinLatency:500ms` o `/http/method:POST`.
 - **Trace ID**: abre una traza por su identificador.
 
 Grafana instala el plugin en segundo plano cada vez que arranca, porque el Pod no tiene disco, así que el
