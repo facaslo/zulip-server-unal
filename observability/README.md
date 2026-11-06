@@ -42,7 +42,7 @@ alertas siguen funcionando y solo falla el datasource de trazas; reiniciar el Po
 ## Detección de caídas
 
 Las alertas de burn rate dependen de que Zulip reporte métricas y de que Grafana esté en pie. Para cubrir una
-caída completa, `terraform/modules/monitoring/uptime.tf` crea en Cloud Monitoring una sonda de `/` cada 5 minutos
+caída completa, `terraform/modules/monitoring/uptime.tf` crea en Cloud Monitoring una sonda de `/login/` cada 5 minutos
 desde varias regiones, una alerta cuando falla desde más de una región y un canal de correo propio, enviado a
 `zulip_administrator`. Nada de esto corre dentro del clúster ni se ve en Grafana: se administra desde
 **Monitoring** en la consola de Google Cloud.

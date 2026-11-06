@@ -10,18 +10,14 @@ resource "google_monitoring_uptime_check_config" "zulip" {
   period       = "300s"
   timeout      = "10s"
 
-  # "/" pasa por el balanceador, nginx, Django y PostgreSQL, y genera
-  # solo 2 spans por sonda; /login/ genera 27. Responde con una
-  # redirección a /login/, que las sondas no siguen.
+  # /login/ pasa por el balanceador, nginx, Django y PostgreSQL. No se
+  # sondea "/" porque las sondas siguen su redirección a /login/, y así
+  # cada una generaría una traza más.
   http_check {
-    path         = "/"
+    path         = "/login/"
     port         = 443
     use_ssl      = true
     validate_ssl = false
-
-    accepted_response_status_codes {
-      status_class = "STATUS_CLASS_3XX"
-    }
   }
 
   monitored_resource {
