@@ -408,6 +408,94 @@ class TestSkipUnlessLocked(ZulipTestCase):
             self.assertEqual(ran, [])
 
 
+class TestGamedayRateLimitExempt(ZulipTestCase):
+    COMMAND_NAME = "gameday_rate_limit_exempt"
+
+    def test_enable_and_disable(self) -> None:
+        realm = get_realm("zulip")
+        bot = self.notification_bot(realm)
+        self.assertEqual(bot.rate_limits, "")
+
+        call_command(
+            self.COMMAND_NAME,
+            "--realm=zulip",
+            "--enable",
+            f"--email={bot.delivery_email}",
+            "--yes-i-understand-this-weakens-rate-limiting",
+        )
+        bot.refresh_from_db()
+        self.assertEqual(bot.rate_limits, "60:100000")
+
+        call_command(
+            self.COMMAND_NAME,
+            "--realm=zulip",
+            "--disable",
+            f"--email={bot.delivery_email}",
+            "--yes-i-understand-this-weakens-rate-limiting",
+        )
+        bot.refresh_from_db()
+        self.assertEqual(bot.rate_limits, "")
+
+    def test_custom_rules(self) -> None:
+        realm = get_realm("zulip")
+        bot = self.notification_bot(realm)
+
+        call_command(
+            self.COMMAND_NAME,
+            "--realm=zulip",
+            "--enable",
+            f"--email={bot.delivery_email}",
+            "--rules=1:999999",
+            "--yes-i-understand-this-weakens-rate-limiting",
+        )
+        bot.refresh_from_db()
+        self.assertEqual(bot.rate_limits, "1:999999")
+
+    def test_rejects_non_bot_accounts(self) -> None:
+        realm = get_realm("zulip")
+        human = self.example_user("hamlet")
+
+        with self.assertRaises(CommandError):
+            call_command(
+                self.COMMAND_NAME,
+                "--realm=zulip",
+                "--enable",
+                f"--email={human.delivery_email}",
+                "--yes-i-understand-this-weakens-rate-limiting",
+            )
+        human.refresh_from_db()
+        self.assertEqual(human.rate_limits, "")
+
+    def test_aborts_without_correct_confirmation(self) -> None:
+        realm = get_realm("zulip")
+        bot = self.notification_bot(realm)
+
+        with mock.patch("builtins.input", return_value="no era esa frase"):
+            with self.assertRaises(CommandError):
+                call_command(
+                    self.COMMAND_NAME,
+                    "--realm=zulip",
+                    "--enable",
+                    f"--email={bot.delivery_email}",
+                )
+        bot.refresh_from_db()
+        self.assertEqual(bot.rate_limits, "")
+
+    def test_confirmation_phrase_accepted(self) -> None:
+        realm = get_realm("zulip")
+        bot = self.notification_bot(realm)
+
+        with mock.patch("builtins.input", return_value="EXIMIR RATE LIMIT"):
+            call_command(
+                self.COMMAND_NAME,
+                "--realm=zulip",
+                "--enable",
+                f"--email={bot.delivery_email}",
+            )
+        bot.refresh_from_db()
+        self.assertEqual(bot.rate_limits, "60:100000")
+
+
 class TestPasswordRestEmail(ZulipTestCase):
     COMMAND_NAME = "send_password_reset_email"
 

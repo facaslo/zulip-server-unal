@@ -136,6 +136,14 @@ variable "images" {
   }
 }
 
+# No es ni parte de la app ni del stack de monitoreo -- es
+# herramienta del escenario 2 (latencia) del GameDay.
+variable "toxiproxy_image" {
+  description = "Imagen de Toxiproxy para el escenario de latencia del GameDay, fijada a una versión exacta."
+  type        = string
+  default     = "ghcr.io/shopify/toxiproxy:2.13.0"
+}
+
 variable "storage_sizes" {
   description = "Tamaño de los volúmenes persistentes."
   type = object({

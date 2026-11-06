@@ -227,8 +227,32 @@ module "rabbitmq" {
     limits   = { memory = "1Gi" }
   }
 
-  allowed_clients = ["zulip"]
+  # "zulip" queda habilitado además de "toxiproxy" para que la
+  # mitigación de reconexión directa (gameday/README.md, evitar el
+  # tramo de red degradado) sea viable en vivo -- si solo se
+  # permitiera a toxiproxy, reconectar directo dejaría a Zulip sin
+  # poder hablar con RabbitMQ en absoluto (confirmado: sin esto el
+  # TCP connect se cuelga y Zulip nunca llega a Ready).
+  allowed_clients = ["toxiproxy", "zulip"]
   labels          = local.labels
+}
+
+# Escenario de latencia (opción 2) del GameDay: Zulip habla con
+# RabbitMQ a través de este proxy en vez de directo, para poder
+# inyectar retraso de red controlado en vivo vía su API HTTP de
+# administración (gameday/toxiproxy_toggle.py). Sin ningún toxic
+# activo es transparente -- mismo comportamiento que hablar
+# directo con RabbitMQ.
+module "toxiproxy" {
+  source = "./modules/toxiproxy"
+
+  namespace     = kubernetes_namespace_v1.zulip.metadata[0].name
+  image         = var.toxiproxy_image
+  upstream_host = module.rabbitmq.host
+  upstream_port = module.rabbitmq.port
+  labels        = local.labels
+
+  depends_on = [module.rabbitmq]
 }
 
 module "zulip" {
@@ -245,7 +269,7 @@ module "zulip" {
   env = merge({
     SETTING_REMOTE_POSTGRES_HOST = module.postgres.host
     SETTING_MEMCACHED_LOCATION   = "${module.memcached.host}:${module.memcached.port}"
-    SETTING_RABBITMQ_HOST        = module.rabbitmq.host
+    SETTING_RABBITMQ_HOST        = module.toxiproxy.host
     SETTING_REDIS_HOST           = module.redis.host
 
     SETTING_EXTERNAL_HOST = local.external_host
@@ -311,5 +335,5 @@ module "zulip" {
 
   # Equivale a depends_on: condition: service_healthy del compose:
   # cada Deployment de respaldo espera su rollout (readiness probe).
-  depends_on = [module.postgres, module.redis, module.memcached, module.rabbitmq]
+  depends_on = [module.postgres, module.redis, module.memcached, module.rabbitmq, module.toxiproxy]
 }
