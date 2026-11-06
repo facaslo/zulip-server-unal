@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "editable": true,
-  "refresh": "1m",
+  "refresh": "30s",
   "time": {
     "from": "now-6h",
     "to": "now"
