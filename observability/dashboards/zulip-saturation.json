@@ -1,0 +1,1033 @@
+{
+  "uid": "zulip-saturation",
+  "title": "Zulip · Saturación",
+  "description": "Qué tan cerca están los componentes de Zulip de sus límites, y las trazas de las peticiones afectadas.",
+  "tags": [
+    "zulip",
+    "saturation"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Estado actual",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "RabbitMQ",
+      "description": "Réplicas de RabbitMQ que pasan su readiness probe (rabbitmq-diagnostics ping). Viene de Kubernetes, así que sigue reportando si RabbitMQ está caído. No detecta un problema de red entre Zulip y RabbitMQ.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "sum(kube_deployment_status_replicas_available{namespace=\"zulip\",deployment=\"rabbitmq\"})",
+          "refId": "A",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Caído",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "noValue": "Sin datos"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Conexiones a PostgreSQL",
+      "description": "Conexiones abiertas respecto a max_connections. Al llegar al 100 %, las nuevas se rechazan.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 1,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "sum(pg_stat_database_numbackends) / max(pg_settings_max_connections)",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.7
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "Sin datos"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Clientes de Redis",
+      "description": "Clientes conectados respecto a maxclients.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 9,
+        "y": 1,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "max(redis_connected_clients) / max(redis_config_maxclients)",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.7
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "Sin datos"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Disco más lleno",
+      "description": "El volumen persistente con mayor ocupación. Con el disco lleno, PostgreSQL y RabbitMQ dejan de aceptar escrituras.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 1,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "max(kubelet_volume_stats_used_bytes{namespace=\"zulip\"} / kubelet_volume_stats_capacity_bytes{namespace=\"zulip\"})",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.7
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "Sin datos"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Rechazos por rate limit",
+      "description": "Respuestas 429 por segundo. Indica que los clientes superan el límite por usuario.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 19,
+        "y": 1,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "sum(rate(zulip_http_requests_total{status=\"429\"}[5m])) or vector(0)",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.1
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "Sin datos"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 7,
+      "type": "row",
+      "title": "Recursos por contenedor",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "CPU",
+      "description": "Núcleos en uso. Los contenedores no tienen límite de CPU, así que compiten por los del nodo y no hay throttling que medir.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "sum by (container) (rate(container_cpu_usage_seconds_total{namespace=\"zulip\",container!=\"\"}[5m]))",
+          "refId": "A",
+          "legendFormat": "{{container}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Memoria",
+      "description": "Working set, la memoria que cuenta para el OOM kill. Los límites están en Terraform: Zulip 6 GiB y RabbitMQ 1 GiB, entre otros.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 6,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "sum by (container) (container_memory_working_set_bytes{namespace=\"zulip\",container!=\"\"})",
+          "refId": "A",
+          "legendFormat": "{{container}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "row",
+      "title": "Componentes con estado",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Conexiones a PostgreSQL por estado",
+      "description": "Muchas en 'idle in transaction' retienen conexiones y bloqueos sin hacer trabajo.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "sum by (state) (pg_stat_activity_count{datname=\"zulip\",state=~\"active|idle|idle in transaction\"})",
+          "refId": "A",
+          "legendFormat": "{{state}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Bloqueos de PostgreSQL",
+      "description": "Bloqueos actuales por modo. Un aumento sostenido suele indicar contención.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 15,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "sum by (mode) (pg_locks_count)",
+          "refId": "A",
+          "legendFormat": "{{mode}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Memoria de Redis",
+      "description": "Memoria usada por Redis. No tiene maxmemory configurado, así que su límite real es el del contenedor.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 15,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "max(redis_memory_used_bytes)",
+          "refId": "A",
+          "legendFormat": "usada",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Ocupación de discos",
+      "description": "Espacio usado de cada volumen persistente.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "max by (persistentvolumeclaim) (kubelet_volume_stats_used_bytes{namespace=\"zulip\"} / kubelet_volume_stats_capacity_bytes{namespace=\"zulip\"})",
+          "refId": "A",
+          "legendFormat": "{{persistentvolumeclaim}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.7
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Demanda de POST /messages",
+      "description": "Envíos por segundo según el código de respuesta, para comparar la carga con el uso de recursos.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 23,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "sum by (status) (rate(zulip_http_requests_total{endpoint=\"send_message\"}[5m]))",
+          "refId": "A",
+          "legendFormat": "{{status}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": "row",
+      "title": "Trazas",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [
+        {
+          "id": 16,
+          "type": "table",
+          "title": "Trazas lentas",
+          "description": "Trazas de 500 ms o más, incluida la entrega por Tornado. El ID abre la traza en Explore.",
+          "datasource": {
+            "type": "googlecloud-trace-datasource",
+            "uid": "cloud-trace"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 32,
+            "w": 8,
+            "h": 9
+          },
+          "maxDataPoints": 25,
+          "targets": [
+            {
+              "datasource": {
+                "type": "googlecloud-trace-datasource",
+                "uid": "cloud-trace"
+              },
+              "refId": "A",
+              "queryText": "MinLatency:500ms",
+              "projectId": "__GCP_PROJECT__"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "noValue": "Sin trazas en este rango"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Trace ID"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Abrir la traza en Explore",
+                        "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22a%22%3A%7B%22datasource%22%3A%22cloud-trace%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22datasource%22%3A%7B%22type%22%3A%22googlecloud-trace-datasource%22%2C%22uid%22%3A%22cloud-trace%22%7D%2C%22queryType%22%3A%22traceID%22%2C%22traceId%22%3A%22${__value.raw}%22%2C%22projectId%22%3A%22__GCP_PROJECT__%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-6h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+                        "targetBlank": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Start time",
+                "desc": true
+              }
+            ]
+          }
+        },
+        {
+          "id": 17,
+          "type": "table",
+          "title": "Peticiones con error 500",
+          "description": "Trazas cuya petición respondió 500. El ID abre la traza en Explore.",
+          "datasource": {
+            "type": "googlecloud-trace-datasource",
+            "uid": "cloud-trace"
+          },
+          "gridPos": {
+            "x": 8,
+            "y": 32,
+            "w": 8,
+            "h": 9
+          },
+          "maxDataPoints": 25,
+          "targets": [
+            {
+              "datasource": {
+                "type": "googlecloud-trace-datasource",
+                "uid": "cloud-trace"
+              },
+              "refId": "A",
+              "queryText": "Status:500",
+              "projectId": "__GCP_PROJECT__"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "noValue": "Sin trazas en este rango"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Trace ID"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Abrir la traza en Explore",
+                        "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22a%22%3A%7B%22datasource%22%3A%22cloud-trace%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22datasource%22%3A%7B%22type%22%3A%22googlecloud-trace-datasource%22%2C%22uid%22%3A%22cloud-trace%22%7D%2C%22queryType%22%3A%22traceID%22%2C%22traceId%22%3A%22${__value.raw}%22%2C%22projectId%22%3A%22__GCP_PROJECT__%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-6h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+                        "targetBlank": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Start time",
+                "desc": true
+              }
+            ]
+          }
+        },
+        {
+          "id": 18,
+          "type": "table",
+          "title": "Fallos al publicar en RabbitMQ",
+          "description": "Trazas con un span de publicación fallido, que lleva el atributo error.type. El ID abre la traza en Explore.",
+          "datasource": {
+            "type": "googlecloud-trace-datasource",
+            "uid": "cloud-trace"
+          },
+          "gridPos": {
+            "x": 16,
+            "y": 32,
+            "w": 8,
+            "h": 9
+          },
+          "maxDataPoints": 25,
+          "targets": [
+            {
+              "datasource": {
+                "type": "googlecloud-trace-datasource",
+                "uid": "cloud-trace"
+              },
+              "refId": "A",
+              "queryText": "HasLabel:error.type",
+              "projectId": "__GCP_PROJECT__"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "noValue": "Sin trazas en este rango"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Trace ID"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Abrir la traza en Explore",
+                        "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22a%22%3A%7B%22datasource%22%3A%22cloud-trace%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22datasource%22%3A%7B%22type%22%3A%22googlecloud-trace-datasource%22%2C%22uid%22%3A%22cloud-trace%22%7D%2C%22queryType%22%3A%22traceID%22%2C%22traceId%22%3A%22${__value.raw}%22%2C%22projectId%22%3A%22__GCP_PROJECT__%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-6h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+                        "targetBlank": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Start time",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -956,7 +956,7 @@
       "gridPos": {
         "x": 0,
         "y": 29,
-        "w": 6,
+        "w": 5,
         "h": 4
       },
       "targets": [
@@ -1038,9 +1038,9 @@
         "uid": "managed-prometheus"
       },
       "gridPos": {
-        "x": 6,
+        "x": 5,
         "y": 29,
-        "w": 6,
+        "w": 5,
         "h": 4
       },
       "targets": [
@@ -1122,9 +1122,9 @@
         "uid": "managed-prometheus"
       },
       "gridPos": {
-        "x": 12,
+        "x": 10,
         "y": 29,
-        "w": 6,
+        "w": 5,
         "h": 4
       },
       "targets": [
@@ -1197,6 +1197,90 @@
       }
     },
     {
+      "id": 21,
+      "type": "stat",
+      "title": "RabbitMQ",
+      "description": "Réplicas de RabbitMQ que pasan su readiness probe (rabbitmq-diagnostics ping). Viene de Kubernetes, así que sigue reportando si RabbitMQ está caído. No detecta un problema de red entre Zulip y RabbitMQ.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "managed-prometheus"
+      },
+      "gridPos": {
+        "x": 15,
+        "y": 29,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "managed-prometheus"
+          },
+          "expr": "sum(kube_deployment_status_replicas_available{namespace=\"zulip\",deployment=\"rabbitmq\"})",
+          "refId": "A",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Caído",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "noValue": "Sin datos"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
       "id": 20,
       "type": "stat",
       "title": "Conexiones a PostgreSQL",
@@ -1206,9 +1290,9 @@
         "uid": "managed-prometheus"
       },
       "gridPos": {
-        "x": 18,
+        "x": 20,
         "y": 29,
-        "w": 6,
+        "w": 4,
         "h": 4
       },
       "targets": [
