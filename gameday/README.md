@@ -37,6 +37,7 @@ Cada uno tiene versión para Bash (`.sh`) y PowerShell (`.ps1`).
 | `add-my-ip` | Agrega la IP pública actual a las redes autorizadas del clúster, conservando las demás. Acepta `--dry-run` (`-DryRun` en PowerShell). El siguiente `terraform apply` la quita, porque restablece la lista de `AUTHORIZED_NETWORKS`. |
 | `grafana-tunnel` | Abre Grafana en `http://localhost:3000`, se reconecta si se pierde la conexión y, en una terminal, muestra el usuario y la contraseña. Acepta otro puerto local como argumento. |
 | `gameday-reset` | Quita los toxics de Toxiproxy, asegura una réplica de RabbitMQ, espera a que Zulip responda e imprime enlaces a los dashboards desde ese momento. Revierte cualquier falla inyectada a propósito y no borra métricas ni logs. |
+| `rabbitmq-crash` | Provoca el incidente de caída de RabbitMQ con `crash`, que pide confirmación escrita, y lo revierte con `restore`, midiendo la recuperación. `status` muestra el estado sin cambiar nada. Zulip se cae de verdad para todos sus usuarios y los errores cuentan en la historia de los SLI, así que necesita tráfico de `latency_load.py` para generar errores y trazas. |
 
 Después de `gameday-reset`, usa la fila **Rango seleccionado** del dashboard de SLO: los paneles de 30 días
 siguen incluyendo las corridas anteriores.
