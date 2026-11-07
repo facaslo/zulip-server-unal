@@ -16,6 +16,9 @@ locals {
   cloud_trace_plugin         = "googlecloud-trace-datasource"
   cloud_trace_plugin_version = "1.4.0"
 
+  cloud_logging_plugin         = "googlecloud-logging-datasource"
+  cloud_logging_plugin_version = "1.8.1"
+
   # Solo se revela si hay usuario SMTP, no cuál es.
   smtp_enabled = nonsensitive(var.smtp_user != "")
 
@@ -259,6 +262,20 @@ resource "kubernetes_config_map_v1" "grafana_datasources" {
         }
       }]
     })
+    "cloud-logging.yaml" = yamlencode({
+      apiVersion = 1
+      datasources = [{
+        name     = "Cloud Logging"
+        uid      = "cloud-logging"
+        type     = local.cloud_logging_plugin
+        access   = "proxy"
+        editable = false
+        jsonData = {
+          authenticationType = "gce"
+          defaultProject     = var.project_id
+        }
+      }]
+    })
   }
 }
 
@@ -385,10 +402,10 @@ resource "kubernetes_deployment_v1" "grafana" {
           }
           # Instalación en segundo plano, a propósito: con
           # GF_PLUGINS_PREINSTALL_SYNC, Grafana termina con error si no
-          # puede descargar el plugin, y con él se caerían las alertas.
+          # puede descargar un plugin, y con él se caerían las alertas.
           env {
             name  = "GF_PLUGINS_PREINSTALL"
-            value = "${local.cloud_trace_plugin}@${local.cloud_trace_plugin_version}"
+            value = "${local.cloud_trace_plugin}@${local.cloud_trace_plugin_version},${local.cloud_logging_plugin}@${local.cloud_logging_plugin_version}"
           }
 
           env_from {

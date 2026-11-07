@@ -41,7 +41,7 @@ resource "google_service_account_iam_member" "collector_workload_identity" {
 }
 
 # ------------------------------------------------------------
-# Identidad de Grafana para consultar Cloud Trace.
+# Identidad de Grafana para consultar Cloud Trace y Cloud Logging.
 # ------------------------------------------------------------
 resource "google_service_account" "grafana" {
   project      = var.project_id
@@ -52,6 +52,16 @@ resource "google_service_account" "grafana" {
 resource "google_project_iam_member" "grafana" {
   project = var.project_id
   role    = "roles/cloudtrace.user"
+  member  = "serviceAccount:${google_service_account.grafana.email}"
+}
+
+# Los dos roles que pide el plugin de Cloud Logging. Quien entra a
+# Grafana puede leer todos los logs del proyecto.
+resource "google_project_iam_member" "grafana_logging" {
+  for_each = toset(["roles/logging.viewer", "roles/logging.viewAccessor"])
+
+  project = var.project_id
+  role    = each.value
   member  = "serviceAccount:${google_service_account.grafana.email}"
 }
 
