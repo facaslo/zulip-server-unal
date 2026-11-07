@@ -15,6 +15,20 @@ locals {
 
   cloud_trace_plugin         = "googlecloud-trace-datasource"
   cloud_trace_plugin_version = "1.4.0"
+
+  # Solo se revela si hay usuario SMTP, no cuál es.
+  smtp_enabled = nonsensitive(var.smtp_user != "")
+
+  grafana_env = merge({
+    GF_SECURITY_ADMIN_PASSWORD = var.grafana_admin_password
+    }, local.smtp_enabled ? {
+    GF_SMTP_ENABLED      = "true"
+    GF_SMTP_HOST         = "${var.smtp_host}:${var.smtp_port}"
+    GF_SMTP_USER         = var.smtp_user
+    GF_SMTP_PASSWORD     = var.smtp_password
+    GF_SMTP_FROM_ADDRESS = var.smtp_user
+    GF_SMTP_FROM_NAME    = "Grafana Zulip"
+  } : {})
 }
 
 resource "kubernetes_namespace_v1" "this" {
@@ -205,9 +219,7 @@ resource "kubernetes_secret_v1" "grafana" {
     labels    = local.labels
   }
 
-  data = {
-    GF_SECURITY_ADMIN_PASSWORD = var.grafana_admin_password
-  }
+  data = local.grafana_env
 }
 
 resource "kubernetes_config_map_v1" "grafana_datasources" {
@@ -338,7 +350,7 @@ resource "kubernetes_deployment_v1" "grafana" {
             kubernetes_config_map_v1.grafana_dashboards.data,
             kubernetes_config_map_v1.grafana_alerting.data,
           ]))
-          "checksum/secret" = sha256(var.grafana_admin_password)
+          "checksum/secret" = sha256(jsonencode(local.grafana_env))
         }
       }
 
