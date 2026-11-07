@@ -29,6 +29,32 @@ variable "grafana_admin_password" {
   sensitive   = true
 }
 
+variable "smtp_host" {
+  description = "Servidor SMTP para las notificaciones de Grafana."
+  type        = string
+  default     = ""
+}
+
+variable "smtp_port" {
+  description = "Puerto SMTP con STARTTLS."
+  type        = number
+  default     = 587
+}
+
+variable "smtp_user" {
+  description = "Usuario SMTP; también es el remitente. Vacío = Grafana sin correo saliente."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "smtp_password" {
+  description = "Contraseña SMTP."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "scrape_targets" {
   description = "Pods que Managed Prometheus debe scrapear: namespace, label app y puerto de /metrics."
   type = map(object({
