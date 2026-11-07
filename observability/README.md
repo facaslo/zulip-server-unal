@@ -18,6 +18,8 @@ arranque (provisioning nativo).
 - `dashboards/zulip-slo.json` — dashboard de Grafana "Zulip · SLI y SLO de mensajería": disponibilidad de
   `POST /messages` (SLO 99%), presupuesto de error y burn rate, latencia de entrega p95 (SLO ≤2.5s), y
   estado de los exporters/componentes con estado (Postgres, Redis).
+  Su última fila repite esos SLI sobre el rango seleccionado, para ver una corrida del GameDay sin la historia
+  anterior. Es solo una vista: los SLO y las alertas siguen usando sus ventanas de siempre.
 - `dashboards/zulip-saturation.json` — dashboard "Zulip · Saturación": qué tan cerca están los componentes de sus
   límites (conexiones, discos, CPU y memoria), el estado de RabbitMQ, y en una fila colapsada las trazas lentas, con
   error 500 o con fallos al publicar en RabbitMQ. Esa fila solo consulta Cloud Trace al abrirla.
