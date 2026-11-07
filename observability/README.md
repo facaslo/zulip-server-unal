@@ -18,6 +18,9 @@ arranque (provisioning nativo).
 - `dashboards/zulip-slo.json` — dashboard de Grafana "Zulip · SLI y SLO de mensajería": disponibilidad de
   `POST /messages` (SLO 99%), presupuesto de error y burn rate, latencia de entrega p95 (SLO ≤2.5s), y
   estado de los exporters/componentes con estado (Postgres, Redis).
+- `dashboards/zulip-saturation.json` — dashboard "Zulip · Saturación": qué tan cerca están los componentes de sus
+  límites (conexiones, discos, CPU y memoria), el estado de RabbitMQ, y en una fila colapsada las trazas lentas, con
+  error 500 o con fallos al publicar en RabbitMQ. Esa fila solo consulta Cloud Trace al abrirla.
 - `alerting/rules/` — reglas de alerta de **Burn Rate Alerting** (formato de provisioning nativo de
   Grafana, `apiVersion: 1`), una por escenario de simulación cubierto:
   - `availability-burn-rate.yaml` — escenario de disponibilidad (caída de RabbitMQ → rompe el SLO de disponibilidad).

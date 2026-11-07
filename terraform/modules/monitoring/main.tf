@@ -285,6 +285,8 @@ resource "kubernetes_config_map_v1" "grafana_dashboards" {
 
   data = {
     "zulip-slo.json" = file("${path.module}/../../../observability/dashboards/zulip-slo.json")
+    # Los paneles de trazas necesitan el proyecto en cada consulta.
+    "zulip-saturation.json" = replace(file("${path.module}/../../../observability/dashboards/zulip-saturation.json"), "__GCP_PROJECT__", var.project_id)
   }
 }
 # ------------------------------------------------------------
