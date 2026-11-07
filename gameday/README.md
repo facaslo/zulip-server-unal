@@ -28,6 +28,19 @@ Herramientas para inyectar y observar la degradación del SLI de latencia de ent
    burn rate real en Grafana se quedó en ~0.13 (umbral: 5). Es la razón por la que existe la estrategia 2
    (Toxiproxy) más abajo: retrasa la conexión a RabbitMQ *después* de publicar, justo donde el SLO mide.
 
+## Scripts de operación
+
+Cada uno tiene versión para Bash (`.sh`) y PowerShell (`.ps1`).
+
+| Script | Qué hace |
+| --- | --- |
+| `add-my-ip` | Agrega la IP pública actual a las redes autorizadas del clúster, conservando las demás. Acepta `--dry-run` (`-DryRun` en PowerShell). El siguiente `terraform apply` la quita, porque restablece la lista de `AUTHORIZED_NETWORKS`. |
+| `grafana-tunnel` | Abre Grafana en `http://localhost:3000`, se reconecta si se pierde la conexión y, en una terminal, muestra el usuario y la contraseña. Acepta otro puerto local como argumento. |
+| `gameday-reset` | Quita los toxics de Toxiproxy, asegura una réplica de RabbitMQ, espera a que Zulip responda e imprime enlaces a los dashboards desde ese momento. Revierte cualquier falla inyectada a propósito y no borra métricas ni logs. |
+
+Después de `gameday-reset`, usa la fila **Rango seleccionado** del dashboard de SLO: los paneles de 30 días
+siguen incluyendo las corridas anteriores.
+
 ## Preparación
 
 1. En Zulip, crear el stream `gameday`.
