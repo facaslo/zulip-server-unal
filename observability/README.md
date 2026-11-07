@@ -44,6 +44,24 @@ Grafana instala el plugin en segundo plano cada vez que arranca, porque el Pod n
 datasource puede tardar unos segundos en responder después de un reinicio. Si la descarga falla, Grafana y las
 alertas siguen funcionando y solo falla el datasource de trazas; reiniciar el Pod vuelve a intentar la instalación.
 
+## Logs
+
+Grafana consulta Cloud Logging con el datasource **Cloud Logging** (plugin `googlecloud-logging-datasource`). Se
+instala igual que el de trazas, así que también puede tardar unos segundos después de un reinicio. Para ver los
+errores de Zulip, se abre **Explore**, se elige ese datasource y se usa esta consulta:
+
+```
+resource.type="k8s_container"
+resource.labels.namespace_name="zulip"
+resource.labels.container_name="zulip"
+textPayload=~"\b(ERR|CRIT)\b|Traceback"
+```
+
+El contenedor escribe `/var/log/zulip/errors.log` en su salida estándar como texto plano. Por eso la consulta busca
+en el texto y no usa `severity`, y busca `ERR` porque así abrevia Zulip ese nivel. Ese archivo también trae las líneas
+`WARN`. Cada línea de un traceback es una entrada aparte; para leerlo completo, se quita el filtro de texto y se miran
+las entradas de ese momento.
+
 ## Detección de caídas
 
 Las alertas de burn rate dependen de que Zulip reporte métricas y de que Grafana esté en pie. Para cubrir una
