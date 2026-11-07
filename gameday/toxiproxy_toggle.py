@@ -68,7 +68,7 @@ def cmd_status(base_url: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
-        "--toxiproxy-url", default="http://localhost:8474", help="URL de la API admin (default: port-forward local)"
+        "--toxiproxy-url", default="http://127.0.0.1:8474", help="URL de la API admin (default: port-forward local)"
     )
     subparsers = parser.add_subparsers(dest="action", required=True)
 
