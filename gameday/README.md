@@ -42,6 +42,20 @@ Cada uno tiene versión para Bash (`.sh`) y PowerShell (`.ps1`).
 Después de `gameday-reset`, usa la fila **Rango seleccionado** del dashboard de SLO: los paneles de 30 días
 siguen incluyendo las corridas anteriores.
 
+Dos scripts de Python, que funcionan igual en Linux y Windows, preparan los datos de los dashboards:
+
+| Script | Qué hace |
+| --- | --- |
+| `observability_wipe.py` | Borra los logs del proyecto de forma irreversible, y los descriptores de métricas de Managed Prometheus, aunque **su historia sigue consultable**: se comprobó una hora después del borrado de 2026-11-07, así que no limpia los paneles de 30 días. Sin `--execute` solo muestra qué borraría; con `--execute` pide escribir el nombre del proyecto. Conserva los logs de auditoría. **No borra las trazas**: la API de Cloud Trace no lo permite y expiran a los 30 días. |
+| `normal_traffic.py` | Genera tráfico normal, sin fallas, para poblar los SLI y SLO. Requiere `requests` y los bots de `gameday/bots/`. Ejemplo: `py gameday/normal_traffic.py --bots-dir gameday/bots --rate 0.5 --duration 3600`. |
+
+Antes de borrar, confirma que nadie esté corriendo un GameDay: el borrado también elimina la evidencia de esa
+corrida. Para ver una corrida sin la historia anterior, usa la fila **Rango seleccionado** del
+dashboard de SLO.
+
+Después de `gameday-reset`, usa la fila **Rango seleccionado** del dashboard de SLO: los paneles de 30 días
+siguen incluyendo las corridas anteriores.
+
 ## Preparación
 
 1. En Zulip, crear el stream `gameday`.
